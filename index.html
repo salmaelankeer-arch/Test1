@@ -88,7 +88,7 @@
             <p>جميع الحقوق محفوظة © 2026 - منصة التقييم والتعلم التكيفي للفيزياء</p>
             <div class="flex space-x-4 space-x-reverse text-slate-400">
                 <span class="inline-flex items-center gap-1"><i class="fa-solid fa-shield-halved text-teal-500"></i> نظام آمن</span>
-                <span class="inline-flex items-center gap-1"><i class="fa-solid fa-wifi text-emerald-500"></i> وضع عدم الاتصال مفعّل</span>
+                <span class="inline-flex items-center gap-1"><i class="fa-solid fa-wifi text-emerald-500"></i> الوضع التعليمي التفاعلي</span>
             </div>
         </div>
     </footer>
@@ -102,143 +102,176 @@
     <!-- MAIN APP JAVASCRIPT SYSTEM -->
     <script>
         /**
-         * State & Mock Database System
+         * System Master Database Initialization & Storage Helpers
          */
+        const INITIAL_TEACHER = {
+            id: 'tch_01',
+            code: 'tch123',
+            name: 'أستاذ الفيزياء (المعلم الرئيسي)',
+            role: 'teacher',
+            pass: '123456'
+        };
+
+        const SKILLS_LIST = [
+            { id: 'sk_01', name: 'التيار الكهربي وقانون أوم والمقاومة', code: 'OHM_LAW' },
+            { id: 'sk_02', name: 'قانونا كيرشوف للدوائر المغلقة', code: 'KIRCHHOFF' },
+            { id: 'sk_03', name: 'المجال والقوة والفيض المغناطيسي', code: 'MAGNETICS' },
+            { id: 'sk_04', name: 'الحث الكهرومغناطيسي وقانون فاراداي', code: 'INDUCTION' }
+        ];
+
+        // 30 Comprehensive Physics Questions (MCQ & Essay across Easy, Medium, Hard)
+        const SEED_QUESTIONS = [
+            // MCQ Easy (1-5)
+            { id: 'q_01', type: 'mcq', difficulty: 'easy', skillId: 'sk_01', text: 'إذا زادت شدة التيار المار في موصل للضعف عند ثبوت درجة الحرارة، فإن مقاومة الموصل:', options: [{ id: 'a', text: 'تزداد للضعف', isCorrect: false, feedback: 'المقاومة خاصية الموصل ولا تتغير بتغير التيار.' }, { id: 'b', text: 'تقل للنصف', isCorrect: false, feedback: 'العلاقة ليست عكسية بهذا الشكل.' }, { id: 'c', text: 'تظل ثابتة', isCorrect: true, feedback: 'ممتاز! المقاومة الأومية للموصل تظل ثابتة طالما لم تتغير أبعاده أو حرارته.' }, { id: 'd', text: 'تزداد لـ 4 أمثال', isCorrect: false, feedback: 'تطبيق خاطئ.' }], explanation: 'المقاومة R = ρe L / A تتوقف على المادة والأبعاد والحرارة فقط.' },
+            { id: 'q_02', type: 'mcq', difficulty: 'easy', skillId: 'sk_01', text: 'وحدة قياس المقاومة النوعية في النظام الدولي هي:', options: [{ id: 'a', text: 'أوم . متر', isCorrect: true, feedback: 'أحسنت! Ω.m هي الوحدة الصحيحة.' }, { id: 'b', text: 'أوم / متر', isCorrect: false, feedback: 'وحدة غير صحيحة.' }, { id: 'c', text: 'فولت / أمبير', isCorrect: false, feedback: 'هذه وحدة المقاومة الكهربية.' }, { id: 'd', text: 'جول . ثانية', isCorrect: false, feedback: 'وحدة شغل/طاقة.' }], explanation: 'ρe = R.A / L -> Ω.m² / m = Ω.m' },
+            { id: 'q_03', type: 'mcq', difficulty: 'easy', skillId: 'sk_02', text: 'يعتمد قانون كيرشوف الأول على مبدأ فيزيائي مهم وهو:', options: [{ id: 'a', text: 'حفظ الطاقة', isCorrect: false, feedback: 'هذا يخص القانون الثاني.' }, { id: 'b', text: 'حفظ الشحنة الكهربية', isCorrect: true, feedback: 'صحيح! مجموع الشحنات الداخلة يساوي الخارجة.' }, { id: 'c', text: 'حفظ كمية الحركة', isCorrect: false, feedback: 'خاص بالميكانيكا.' }, { id: 'd', text: 'حفظ الكتلة', isCorrect: false, feedback: 'غير مباشر هنا.' }], explanation: 'قانون كيرشوف الأول (∑I_in = ∑I_out) صياغة لحفظ الشحنة.' },
+            { id: 'q_04', type: 'mcq', difficulty: 'easy', skillId: 'sk_03', text: 'يقاس الفيض المغناطيسي (Φm) بوحدة:', options: [{ id: 'a', text: 'تسلا (Tesla)', isCorrect: false, feedback: 'التسلا وحدة كثافة الفيض (B).' }, { id: 'b', text: 'وبر (Weber)', isCorrect: true, feedback: 'ممتاز! الوبر هو وحدة الفيض المغناطيسي.' }, { id: 'c', text: 'أمبير / متر', isCorrect: false, feedback: 'وحدة شدة مجال.' }, { id: 'd', text: 'هنري', isCorrect: false, feedback: 'وحدة معامل الحث.' }], explanation: 'الفيض المغناطيسي Φm يقاس بالوبر (Wb).' },
+            { id: 'q_05', type: 'mcq', difficulty: 'easy', skillId: 'sk_04', text: 'تتولد قوة دافعة كهربية مستحثة في سلك مستقيم عندما يتحرك في مجال مغناطيسي بشكل:', options: [{ id: 'a', text: 'موازٍ للمجال', isCorrect: false, feedback: 'لا يقطع خطوط الفيض (sin 0 = 0).' }, { id: 'b', text: 'عمودي على المجال', isCorrect: true, feedback: 'رائع! يقطع خطوط الفيض بأكبر معدل (sin 90 = 1).' }, { id: 'c', text: 'ساكن لا يتحرك', isCorrect: false, feedback: 'السرعة صفر فلا يتولد حث.' }, { id: 'd', text: 'في نفس اتجاه الفيض', isCorrect: false, feedback: 'الزاوية صفر.' }], explanation: 'e.m.f = - B L v sinθ تكون أعظم ما يمكن عندما θ = 90° (عمودي).' },
+
+            // MCQ Medium (6-15)
+            { id: 'q_06', type: 'mcq', difficulty: 'medium', skillId: 'sk_01', text: 'ثلاث مقاومات متماثلة قيمة كل منها 6 أوم تم توصيلها على التوازي، تكون المقاومة المكافئة لها:', options: [{ id: 'a', text: '18 أوم', isCorrect: false, feedback: 'هذا للتوصيل توالي.' }, { id: 'b', text: '2 أوم', isCorrect: true, feedback: 'ممتاز! Req = R / n = 6 / 3 = 2 Ω.' }, { id: 'c', text: '3 أوم', isCorrect: false, feedback: 'خطأ قسمة.' }, { id: 'd', text: '1 أوم', isCorrect: false, feedback: 'حساب غير دقيق.' }], explanation: 'في التوازي للمقاومات المتماثلة: R_eq = R / n' },
+            { id: 'q_07', type: 'mcq', difficulty: 'medium', skillId: 'sk_01', text: 'عند زيادة طول سلك للضعف ونقصان مساحة مقطعه للنصف، فإن مقاومته الكهربية:', options: [{ id: 'a', text: 'تظل ثابتة', isCorrect: false, feedback: 'الطول والمساحة يتغيران.' }, { id: 'b', text: 'تزداد للضعف', isCorrect: false, feedback: 'نسيت تأثير نقص المساحة.' }, { id: 'c', text: 'تزداد لـ 4 أمثال', isCorrect: true, feedback: 'إجابة ممتازة! R2 = (2L) / (A/2) = 4 (L/A) = 4 R1.' }, { id: 'd', text: 'تقل للنصف', isCorrect: false, feedback: 'علاقة طردية مع الطول وعكسية مع المساحة.' }], explanation: 'R تناسب طردياً مع L وعكسياً مع A فتتضاعف 4 مرات.' },
+            { id: 'q_08', type: 'mcq', difficulty: 'medium', skillId: 'sk_02', text: 'في مسار مغلق، إذا كان مجموع البطاريات 12V ومجموع المقاومات × التيار 12V، فإن ∑V عبر المسار يساوي:', options: [{ id: 'a', text: '24V', isCorrect: false, feedback: 'قانون كيرشوف الثاني ينص على الطرح/المساواة.' }, { id: 'b', text: 'صفر', isCorrect: true, feedback: 'صحيح! ∑VB - ∑IR = 0 وتحقق بقاء الطاقة.' }, { id: 'c', text: '6V', isCorrect: false, feedback: 'خطأ.' }, { id: 'd', text: '144V', isCorrect: false, feedback: 'ضرب خاطئ.' }], explanation: 'قانون كيرشوف الثاني ∑VB = ∑IR أي أن المجموع الجبري للفروق صفر.' },
+            { id: 'q_09', type: 'mcq', difficulty: 'medium', skillId: 'sk_03', text: 'القوة المغناطيسية المؤثرة على سلك يحمل تياراً موضوع في مجال مغناطيسي تنعدم عندما يكون السلك:', options: [{ id: 'a', text: 'عمودياً على المجال', isCorrect: false, feedback: 'هنا تكون القوة أكبر ما يمكن.' }, { id: 'b', text: 'موازياً للمجال', isCorrect: true, feedback: 'ممتاز! θ = 0 فيكون sin(0) = 0 والقوة F = 0.' }, { id: 'c', text: 'بزاوية 45 درجة', isCorrect: false, feedback: 'توجد قيمة للقوة.' }, { id: 'd', text: 'مصحوباً بتيار عالٍ', isCorrect: false, feedback: 'التيار يزيد القوة لا يعدمها.' }], explanation: 'F = B I L sinθ تنعدم عند توازي السلك مع المجال (θ = 0).' },
+            { id: 'q_10', type: 'mcq', difficulty: 'medium', skillId: 'sk_03', text: 'سلكان متوازيان يمر بهما تيار في نفس الاتجاه، القوة بينهما تكون قوة:', options: [{ id: 'a', text: 'تنافر', isCorrect: false, feedback: 'التنافر يكون عند تضاد اتجاه التيارين.' }, { id: 'b', text: 'تجاذب', isCorrect: true, feedback: 'صحيح! كثافة الفيض خارج السلكين أكبر من بينهما فيتجاذبان.' }, { id: 'c', text: 'عديمة التأثير', isCorrect: false, feedback: 'توجد قوة مغناطيسية متبادلة.' }, { id: 'd', text: 'دائرية', isCorrect: false, feedback: 'اتجاه القوة خطي بينهما.' }], explanation: 'نفس الاتجاه -> تجاذب، اتجاهين متضادين -> تنافر.' },
+            { id: 'q_11', type: 'mcq', difficulty: 'medium', skillId: 'sk_04', text: 'قاعدة لنز تُستخدم لتحديد اتجاه:', options: [{ id: 'a', text: 'القوة المغناطيسية', isCorrect: false, feedback: 'فلمنج لليد اليسرى تحدد القوة.' }, { id: 'b', text: 'التيار المستحث في ملف', isCorrect: true, feedback: 'أحسنت! اتجاه التيار المستحث بحيث يقاوم التغير المسبب له.' }, { id: 'c', text: 'المجال الكهربي الاستاتيكي', isCorrect: false, feedback: 'غير صحيح.' }, { id: 'd', text: 'دوران المحرك', isCorrect: false, feedback: 'فلمنج اليسرى.' }], explanation: 'قاعدة لنز تحدد اتجاه التيار المستحث في ملف وتقوم على حفظ الطاقة.' },
+            { id: 'q_12', type: 'mcq', difficulty: 'medium', skillId: 'sk_04', text: 'يزداد معامل الحث الذاتي لملف عند:', options: [{ id: 'a', text: 'زيادة المقاومة الأومية', isCorrect: false, feedback: 'المقاومة لا تؤثر في معامل الحث L.' }, { id: 'b', text: 'إدخال ساق من الحديد المطاوع داخله', isCorrect: true, feedback: 'ممتاز! النفاذية المغناطيسية للحديد عالية جداً فتزيد معامل الحث L.' }, { id: 'c', text: 'تقليل عدد اللفات', isCorrect: false, feedback: 'L تتناسب طردياً مع مربع عدد اللفات N².' }, { id: 'd', text: 'تقليل مساحة المقطع', isCorrect: false, feedback: 'L تتناسب طردياً مع المساحة A.' }], explanation: 'L = μ N² A / l (زيادة μ تزيد L).' },
+            { id: 'q_13', type: 'mcq', difficulty: 'medium', skillId: 'sk_01', text: 'عند التوصيل على التوالي، الكمية الفيزيائية التي تظل ثنائية وثابتة في جميع المقاومات هي:', options: [{ id: 'a', text: 'فرق الجهد', isCorrect: false, feedback: 'فرق الجهد يتجزأ على المقاومات.' }, { id: 'b', text: 'شدة التيار', isCorrect: true, feedback: 'رائع! في التوالي التيار هو نفسه المار بالجميع.' }, { id: 'c', text: 'القدرة المستهلكة', isCorrect: false, feedback: 'تعتمد على قيمة كل مقاومة P=I²R.' }, { id: 'd', text: 'المقاومة النوعية', isCorrect: false, feedback: 'تعتمد على مادة كل موصل.' }], explanation: 'في التوالي: I_total = I1 = I2 = I3.' },
+            { id: 'q_14', type: 'mcq', difficulty: 'medium', skillId: 'sk_02', text: 'نقطة تفرع في دائرة ينادي فيها 3 تيارات: I1=2A, I2=3A قادمان للنقطة، فيكون التيار الخارج I3 مساوياً:', options: [{ id: 'a', text: '1 أمبير', isCorrect: false, feedback: 'تأكد من الجمع.' }, { id: 'b', text: '5 أمبير', isCorrect: true, feedback: 'إجابة صحيحة! ∑I_in = ∑I_out -> 2 + 3 = 5A.' }, { id: 'c', text: '6 أمبير', isCorrect: false, feedback: 'ضرب خاطئ.' }, { id: 'd', text: 'صفر', isCorrect: false, feedback: 'لا تتراكم الشحنات.' }], explanation: 'مجموع الداخلي = مجموع الخارجي طبقاً لكيرشوف الأول.' },
+            { id: 'q_15', type: 'mcq', difficulty: 'medium', skillId: 'sk_03', text: 'ملف دائري عدد لافاته N ويمر به تيار I، إذا أعيد لفه بحيث زاد قطره للضعف مع ثبوت التيار، فإن كثافة الفيض بمركزه:', options: [{ id: 'a', text: 'تقل للنصف', isCorrect: false, feedback: 'تأكد من تغير عدد اللفات أيضاً عند زيادة القطر بنفس طول السلك.' }, { id: 'b', text: 'تقل للربع', isCorrect: true, feedback: 'ممتاز! زيادة القطر للضعف تقلل N للنصف وتزيد r للضعف فتصبح B2 = B1 / 4.' }, { id: 'c', text: 'تزداد للضعف', isCorrect: false, feedback: 'علاقة عكسية مع نصف القطر.' }, { id: 'd', text: 'تظل ثابتة', isCorrect: false, feedback: 'تتغير القيمة.' }], explanation: 'عند إعادة اللف: B تتناسب عكسياً مع r² فتصبح B/4.' },
+
+            // MCQ Hard (16-20)
+            { id: 'q_16', type: 'mcq', difficulty: 'hard', skillId: 'sk_03', text: 'طائر يقف بأقدمه الاثنتين على سلك كهربائي للضغط العالي (100,000 فولت) دون أن يصعق. ما السبب الفيزيائي؟', options: [{ id: 'a', text: 'جسم الطائر عازل للكهرباء', isCorrect: false, feedback: 'أجسام الكائنات موصلة.' }, { id: 'b', text: 'عدم وجود فرق جهد بين قدمي الطائر على السلك نفسه', isCorrect: true, feedback: 'إجابة مذهلة! لا يمر تيار لعدم وجود فرق جهد ΔV ≈ 0 بين القدمين.' }, { id: 'c', text: 'السلك مغلف بعازل سميك للغاية', isCorrect: false, feedback: 'أسلاك الضغط العالي غير مغلفة.' }, { id: 'd', text: 'التيار يسري فقط في مركز السلك', isCorrect: false, feedback: 'تأثير غير دقيق.' }], explanation: 'شرط مرور التيار الكهربي وجود فرق جهد ΔV بين نقطتين.' },
+            { id: 'q_17', type: 'mcq', difficulty: 'hard', skillId: 'sk_01', text: 'سلك من النحاس تم سحبه فزاد طوله بنسبة 100%، فإن مقاومته الكهربية تزداد بنسبة:', options: [{ id: 'a', text: '100%', isCorrect: false, feedback: 'نسيت نقص مساحة المقطع.' }, { id: 'b', text: '300%', isCorrect: true, feedback: 'عبقري! R2 = 4 R1 أي زيادة مقدارها 3R1 (بنسبة 300%).' }, { id: 'c', text: '200%', isCorrect: false, feedback: 'حساب غير دقيق.' }, { id: 'd', text: '400%', isCorrect: false, feedback: '400% هي القيمة الجديدة وليست مقدار الزيادة.' }], explanation: 'R تناسب طردياً مع L² عند السحب -> L2 = 2L1 => R2 = 4R1 -> الزيادة ΔR = 300%' },
+            { id: 'q_18', type: 'mcq', difficulty: 'hard', skillId: 'sk_04', text: 'دينامو تيار متردد يدور ملفه بمعدل 50 دورة/ثانية، فإن التيار يصل للقيمة العظمى كم مرة في الثانية الأولى؟', options: [{ id: 'a', text: '50 مرة', isCorrect: false, feedback: 'في كل دورة يصل للقمة والقاع مرة (مرتان).' }, { id: 'b', text: '100 مرة', isCorrect: true, feedback: 'ممتاز! عدد مرات الوصول للعظمى = 2 f = 2 × 50 = 100 مرة.' }, { id: 'c', text: '200 مرة', isCorrect: false, feedback: 'مبالغة في الحساب.' }, { id: 'd', text: '101 مرة', isCorrect: false, feedback: 'هذا ينطبق على الصفر بدءاً من الوضع العمودي (2f + 1).' }], explanation: 'عدد مرات الوصول للقيمة العظمى خلال ثانية واحدة = 2f.' },
+            { id: 'q_19', type: 'mcq', difficulty: 'hard', skillId: 'sk_02', text: 'دائرة تحتوي على بطارية لها مقاومة داخلية r. تكون كفاءة البطارية أعلى ما يمكن عندما تكون المقاومة الخارجية R:', options: [{ id: 'a', text: 'كبيرة جداً مقارنة بـ r', isCorrect: true, feedback: 'أحسنت! يقل الهبوط في الجهد الداخلي I.r فتصل الكفاءة لـ 100% تقريباً.' }, { id: 'b', text: 'مساوية لـ r تماماً', isCorrect: false, feedback: 'هذه حالة أقصى نقل قدرة وليست أقصى كفاءة.' }, { id: 'c', text: 'معدومة R = 0', isCorrect: false, feedback: 'تصل الكفاءة لصفر.' }, { id: 'd', text: 'أقل من r كثيراً', isCorrect: false, feedback: 'يزداد الفقد الداخلي.' }], explanation: 'الكفاءة η = R / (R + r) تزداد كلما كبرت المقاومة الخارجية R.' },
+            { id: 'q_20', type: 'mcq', difficulty: 'hard', skillId: 'sk_04', text: 'عند سقوط مغناطيس خلال حلقيتين متماثلتين (واحدة مفتوحة والأخرى مغلقة)، ماذا يحدث؟', options: [{ id: 'a', text: 'يسقط المغناطيس بذات السرعة فيهما', isCorrect: false, feedback: 'الحلقة المغلقة يمر بها تيار مستحث يولد مجالاً معاكساً.' }, { id: 'b', text: 'يصل الأرض أسرع في حالة الحلقة المفتوحة', isCorrect: true, feedback: 'رائع! المفتوحة لا يمر بها تيار ولا تولد قوة فرملة مغناطيسية ضد الجاذبية.' }, { id: 'c', text: 'ينجذب للمغلقة ويتوقف تماماً', isCorrect: false, feedback: 'يتباطأ فقط طبقاً للنّز.' }, { id: 'd', text: 'يتولّد تيار شديد في الحلقة المفتوحة', isCorrect: false, feedback: 'الدائرة المفتوحة لا يمر بها تيار.' }], explanation: 'الحلقة المغلقة تولد قوة تنافر/تجاذب معاكسة للحركة (قاعدة لنز) المفتوحة لا يمر بها تيار.' },
+
+            // ESSAY Questions Easy/Medium/Hard (21-30)
+            {
+                id: 'q_21', type: 'essay', difficulty: 'easy', skillId: 'sk_01',
+                text: 'علل: يُفضل توصيل الأجهزة الكهربية في المنازل على التوازي وليس على التوالي؟',
+                keywords: ['مستقل', 'فرق جهد', 'مقاومة مكافئة', 'إطفاء', 'تلف'],
+                modelAnswer: 'لتعمل جميع الأجهزة على نفس فرق جهد المصدر الكهربي (220V)، ولكي يمكن تشغيل أو إطفاء أي جهاز دون التأثير على بقية الأجهزة، ولتقليل المقاومة المكافئة للدائرة فلا يضعف التيار.',
+                remedialFeedback: 'تذكر دائماً ميزات التوازي: ثبوت فرق الجهد V، استقلالية تشغيل الأجهزة، وتقليل المقاومة المكافئة.'
+            },
+            {
+                id: 'q_22', type: 'essay', difficulty: 'easy', skillId: 'sk_01',
+                text: 'علل: تُصنع كابلات نقل الطاقة الكهربية من موصلات ذات مقاومة نوعية صغيرة جداً كالنحاس؟',
+                keywords: ['مقاومة نوعية', 'فقد', 'طاقة حرارية', 'قدرة مستهلكة', 'توفير'],
+                modelAnswer: 'لأن صغر المقاومة النوعية يؤدي لتقليل مقاومة الكابلات (R = ρe L / A)، مما يقلل القدرة الكهربية المستهلكة على شكل طاقة حرارية في الأسلاك (P = I²R)، فيقل الفقد في الطاقة.',
+                remedialFeedback: 'ربط المفاهيم: ρe صغيرة -> R صغيرة -> فقد حراري أقل (I²R).'
+            },
+            {
+                id: 'q_23', type: 'essay', difficulty: 'medium', skillId: 'sk_02',
+                text: 'اشرح المبدأ الفيزيائي الخاضع له قانون كيرشوف الثاني مع ذكر الصياغة الرياضية له.',
+                keywords: ['بقاء الطاقة', 'حفظ الطاقة', 'الشغل', 'مجموع', 'جهد'],
+                modelAnswer: 'يعتمد على مبدأ حفظ (بقاء) الطاقة؛ حيث أن الشغل الكلي المبذول بواسطة المصادر الكهربية في مسار مغلق يساوي الشغل المستهلك في المقاومات. صياغته: ∑VB = ∑IR أو ∑ΔV = 0.',
+                remedialFeedback: 'قانون كيرشوف الأول = حفظ الشحنة، قانون كيرشوف الثاني = حفظ الطاقة.'
+            },
+            {
+                id: 'q_24', type: 'essay', difficulty: 'medium', skillId: 'sk_03',
+                text: 'علل: لا تتقاطع خطوط الفيض المغناطيسي مع بعضها البعض إطلاقاً؟',
+                keywords: ['اتجاه', 'مماس', 'نقطة', 'واحد', 'المجال'],
+                modelAnswer: 'لأنه لو تقاطعت خطوط الفيض، لكان للمجال المغناطيسي أكثر من اتجاه عند نقطة التقاطع الواحدة، وهذا محال فيزياءً لأن المماس يمثل اتجاه المجال عند نقطة واحدة فقط.',
+                remedialFeedback: 'خطوط الفيض تمثل اتجاه المماس المحصل، ولا يمكن وجود اتجاهين للمجال عند نقطة واحدة.'
+            },
+            {
+                id: 'q_25', type: 'essay', difficulty: 'medium', skillId: 'sk_03',
+                text: 'اشرح كيف يمكن تقليل القوة المغناطيسية المؤثرة على سلك يحمل تياراً إلى النصف دون تغيير المجال المغناطيسي.',
+                keywords: ['زاوية', 'شدة التيار', 'طول', 'نصف', 'sin'],
+                modelAnswer: 'إما بتقليل شدة التيار المار للنصف (I/2)، أو تقليل طول الجزء المعرض للمجال للنصف (L/2)، أو تغيير زاوية ميل السلك θ بحيث يصبح sinθ مساوياً 0.5 (أي θ = 30°).',
+                remedialFeedback: 'القانون F = B I L sinθ، التحكم بأي عنصر (I, L, sinθ) يؤثر طردياً على القوة.'
+            },
+            {
+                id: 'q_26', type: 'essay', difficulty: 'medium', skillId: 'sk_04',
+                text: 'وضح اذكر نص قاعدة لنز، وما التطبيق الفيزيائي المباشر عليها؟',
+                keywords: ['معاكس', 'تغير', 'مسبب', 'حث', 'تيار'],
+                modelAnswer: 'النص: يكون اتجاه التيار الكهربي المستحث في ملف بحيث يقاوم التغير في الفيض المغناطيسي المسبب له. ومن تطبيقاته تحديد اتجاه التيار المستحث في الملفات والتفريغ الكهرومغناطيسي.',
+                remedialFeedback: 'قاعدة لنز تُعبر عن المقاومة الفيزيائية للتغير في الفيض (فعل ورد فعل كهرومغناطيسي).'
+            },
+            {
+                id: 'q_27', type: 'essay', difficulty: 'hard', skillId: 'sk_04',
+                text: 'ماذا يحدث لقراءة أجهزة القياس عند زيادة سرعة دوران ملف الدينامو للضعف؟ وضح التفسير.',
+                keywords: ['تردد', 'قوة دافعة', 'ضعف', 'عظمى', 'فولت'],
+                modelAnswer: 'تزداد قراءة الفولتميتر (القيمة الفعالة للجهد) للضعف؛ لأن emf_max = NABω و ω = 2πf، فبزيادة التردد للضعف تزداد emf العظمى والفعالة للضعف (V_eff ∝ f).',
+                remedialFeedback: 'سرعة الدوران ω ترتبط طردياً بالتردد f والقوة الدافعة الكهربية المستحثة EMF.'
+            },
+            {
+                id: 'q_28', type: 'essay', difficulty: 'hard', skillId: 'sk_01',
+                text: 'علل: تزداد المقاومة الكهربية للموصل برفع درجة حرارته؟',
+                keywords: ['اهتزاز', 'سعة', 'تصادم', 'إلكترونات', 'جزيئات'],
+                modelAnswer: 'لأن رفع درجة الحرارة يزيد من طاقة الحركة واهتزاز جزيئات الموصل وسعة اهتزازها، فيزداد معدل تصادم الإلكترونات الحرة مع جزيئات الموصل، مما يعيق حركتها فتزداد المقاومة.',
+                remedialFeedback: 'الحرارة -> زيادة طاقة اهتزاز الجزيئات -> زيادة التصادمات مع الإلكترونات -> زيادة المقاومة R.'
+            },
+            {
+                id: 'q_29', type: 'essay', difficulty: 'hard', skillId: 'sk_02',
+                text: 'كيف يمكنك عملياً تطبيق قانون كيرشوف لحساب المقاومة الداخلية لبطارية مجهولة؟',
+                keywords: ['دائرة', 'فولتميتر', 'مغلقة', 'مقاومة', 'تغير'],
+                modelAnswer: 'بتوصيل البطارية مع مقاومة متغيرة R وفولتميتر بين قطبيها، وقراءة الجهد في حالة الدائرة المفتوحة (VB) ثم غلق الدائرة وقياس الجهد V والتيار I، وتطبيق القانون V = VB - I r لحساب r.',
+                remedialFeedback: 'المقاومة الداخلية تحسب من الهبوط في الجهد عبر البطارية: r = (VB - V) / I.'
+            },
+            {
+                id: 'q_30', type: 'essay', difficulty: 'hard', skillId: 'sk_04',
+                text: 'علل: يُلف سلك المقاومات القياسية لفاً مزدوجاً؟',
+                keywords: ['حث', 'ذاتي', 'مجالين', 'متضادين', 'إلغاء'],
+                modelAnswer: 'ليكون اتجاه التيار في أحد الفرعين معاكساً لاتجاهه في الفرع الآخر، فينشأ مجالان مغناطيسيان متساويان في الشدة ومتضادان في الاتجاه فيلاشي كل منهما الآخر وينعدم الحث الذاتي.',
+                remedialFeedback: 'اللف المزدوج هو الحل الفيزيائي القياسي لإلغاء الحث الذاتي تماماً في المقاومات.'
+            }
+        ];
+
+        // Seed Homework Assignments mapped from the 30 questions
+        const SEED_HOMEWORKS = [
+            {
+                id: 'hw_01',
+                title: 'واجب (1): التيار والمقاومة وقانون أوم',
+                dueDate: 'اليوم - 11:59 مساءً',
+                skillId: 'sk_01',
+                questions: ['q_01', 'q_06', 'q_17', 'q_21', 'q_22']
+            },
+            {
+                id: 'hw_02',
+                title: 'واجب (2): تطبيقات كيرشوف وحفظ الطاقة',
+                dueDate: 'غداً',
+                skillId: 'sk_02',
+                questions: ['q_03', 'q_08', 'q_14', 'q_23', 'q_29']
+            },
+            {
+                id: 'hw_03',
+                title: 'واجب (3): المغناطيسية والقوة والحث الكهرومغناطيسي',
+                dueDate: 'خلال 3 أيام',
+                skillId: 'sk_04',
+                questions: ['q_05', 'q_11', 'q_12', 'q_26', 'q_30']
+            }
+        ];
+
+        // System Storage Proxy
         const DB = {
-            users: [
-                { id: 'tch_01', code: 'tch123', name: 'أ. أحمد مصطفى', role: 'teacher', pass: '123456' },
-                { id: 'std_01', code: 'std1', name: 'عمر خالد', role: 'student', pass: '123456', grade: 'الصف الثالث الثانوي' },
-                { id: 'std_02', code: 'std2', name: 'سارة محمد', role: 'student', pass: '123456', grade: 'الصف الثالث الثانوي' },
-                { id: 'prn_01', code: 'prn1', name: 'والد الطالب عمر خالد', role: 'parent', pass: '123456', studentId: 'std_01' }
-            ],
-            skills: [
-                { id: 'sk_01', name: 'قانون أوم وتوصيل المقاومات', code: 'OHM_LAW' },
-                { id: 'sk_02', name: 'قانونا كيرشوف للدوائر المغلقة', code: 'KIRCHHOFF' },
-                { id: 'sk_03', name: 'المجال المغناطيسي والقوة المغناطيسية', code: 'MAGNETIC_FIELD' },
-                { id: 'sk_04', name: 'الحث الكهرومغناطيسي وقانون فاراداي', code: 'INDUCTION' }
-            ],
-            // Daily Homework Database (MCQ + Essay)
-            homeworks: [
-                {
-                    id: 'hw_01',
-                    title: 'واجب تطبيق قانون أوم والمقاومة الكهربية',
-                    dueDate: 'اليوم - 11:59 مساءً',
-                    skillId: 'sk_01',
-                    questions: [
-                        {
-                            id: 'hw_q1',
-                            type: 'mcq',
-                            text: 'سلك من النحاس تم سحبه فزاد طوله بنسبة 100%، فإن مقاومته الكهربية تزداد بنسبة:',
-                            options: [
-                                { id: 'a', text: '100% (تتضاعف فقط)', isCorrect: false, feedback: 'خطأ! عند سحب السلك تزيد المقاومة ليس فقط لزيادة الطول بل لأن مساحة المقطع تقل أيضاً بنسبة عكسية (الحجم ثابت).' },
-                                { id: 'b', text: '300% (تصبح 4 أمثال)', isCorrect: true, feedback: 'ممتاز! عند زيادة الطول للضعف (L₂=2L₁) تقل المساحة للنصف (A₂=A₁/2)، فتصبح R₂ = 4 R₁، أي أن مقدار الزيادة هو 300% من القيمة الأصلية.' },
-                                { id: 'c', text: '200%', isCorrect: false, feedback: 'خطأ! تأكد من الحساب: R تناسب طردياً مع L² عند ثبوت الحجم.' },
-                                { id: 'd', text: '400%', isCorrect: false, feedback: 'خطأ! 400% هي القيمة الجديدة للمقاومة (4R₁) وليست مقدار الزيادة (ΔR).' }
-                            ],
-                            explanation: 'قانون إعادة التشكيل وسحب الأسلاك: R₁/R₂ = (L₁/L₂)² عند ثبوت الحجم والمادة.'
-                        },
-                        {
-                            id: 'hw_q2',
-                            type: 'essay',
-                            text: 'علل: تُصنع كابلات نقل الطاقة الكهربية من مواد ذات مقاومة نوعية صغيرة جداً كالنحاس؟',
-                            keywords: ['مقاومة نوعية', 'فقد', 'طاقة حرارية', 'قدرة مستهلكة', 'توفير'],
-                            modelAnswer: 'لأن صغر المقاومة النوعية يؤدي لتقليل مقاومة الكابلات (R = ρe L / A)، مما يقلل القدرة الكهربية المستهلكة على شكل طاقة حرارية في الأسلاك (P = I²R)، فيقل الفقد في الطاقة أثناء النقل.',
-                            remedialFeedback: 'ملاحظة تعليمية: تأكد دائماً من الربط بين المقاومة النوعية (ρe)، ومقاومة السلك (R)، ثم حساب الفقد الحراري المستهلك (I²R).'
-                        }
-                    ]
-                },
-                {
-                    id: 'hw_02',
-                    title: 'واجب كيرشوف وحساب فروق الجهد',
-                    dueDate: 'غداً',
-                    skillId: 'sk_02',
-                    questions: [
-                        {
-                            id: 'hw_q3',
-                            type: 'mcq',
-                            text: 'عند تطبيق قانون كيرشوف الثاني على مسار مغلق، إذا كان الناتج الكلي لـ ∑V يساوي صفراً، فهذا يدل على:',
-                            options: [
-                                { id: 'a', text: 'عدم وجود تيار بالدائرة', isCorrect: false, feedback: 'خطأ! وجود مسار مغلق بشرط ∑V=0 هو نص قانون كيرشوف وليس دليلاً على انعدام التيار.' },
-                                { id: 'b', text: 'تحقق مبدأ حفظ الطاقة بالمسار المغلق', isCorrect: true, feedback: 'إجابة رائعة! مجموع الشغل المبذول بواسطة البطاريات يساوي الشغل المستهلك في المقاومات (حفظ الطاقة).' },
-                                { id: 'c', text: 'تساوي جميع المقاومات', isCorrect: false, feedback: 'خطأ! ينطبق القانون بغض النظر عن قيم المقاومات.' },
-                                { id: 'd', text: 'انعدام فرق الجهد الكهربي', isCorrect: false, feedback: 'خطأ! ينطبق في وجود فروق جهد.' }
-                            ],
-                            explanation: 'قانون كيرشوف الثاني ∑VB = ∑IR هو صياغة لقانون بقاء الطاقة.'
-                        }
-                    ]
+            getUsers: function() {
+                const stored = localStorage.getItem('phys_users');
+                if (!stored) {
+                    const initial = [INITIAL_TEACHER];
+                    localStorage.setItem('phys_users', JSON.stringify(initial));
+                    return initial;
                 }
-            ],
-            questions: [
-                {
-                    id: 'q_01',
-                    type: 'mcq',
-                    difficulty: 'easy',
-                    skillId: 'sk_01',
-                    text: 'إذا زادت شدة التيار المار في موصل للضعف عند ثبوت درجة الحرارة، فإن مقاومة الموصل:',
-                    options: [
-                        { id: 'a', text: 'تزداد للضعف', isCorrect: false, errorType: 'خلط بين المقاومة وشدة التيار', feedback: 'خطأ! المقاومة الأومية للموصل خاصية فيزيائية تتوقف على طوله ومساحة مقطعه ونوع مادته فقط ولا تتغير بتغير التيار.' },
-                        { id: 'b', text: 'تقل للنصف', isCorrect: false, errorType: 'علاقة عكسية خاطئة', feedback: 'خطأ! المقاومة لا تعتمد عكسياً على التيار وإنما تغير التيار هو نتيجة لتغير المقاومة أو الجهد.' },
-                        { id: 'c', text: 'تظل ثابتة', isCorrect: true, errorType: null, feedback: 'ممتاز! إجابة صحيحة. المقاومة الكهربية للموصل تظل ثابتة طالما لم يتغير طوله أو مساحته أو نوع مادته أو درجة حرارته.' },
-                        { id: 'd', text: 'تزداد لأربعة أمثال', isCorrect: false, errorType: 'تطبيق خاطئ لتربيع التيار', feedback: 'خطأ! هذا القانون يخص القدرة المستهلكة وليس المقاومة الكهربية.' }
-                    ],
-                    explanation: 'المقاومة الكهربية (R) تظل ثابتة للموصل الواحد عند ثبوت درجة الحرارة ولا تتغير بتغير شدة التيار المار فيه.'
-                },
-                {
-                    id: 'q_02',
-                    type: 'mcq',
-                    difficulty: 'medium',
-                    skillId: 'sk_01',
-                    text: 'ثلاث مقاومات متماثلة قيمة كل منها 6 أوم، تم توصيلها على التوازي، تكون المقاومة المكافئة لها:',
-                    options: [
-                        { id: 'a', text: '18 أوم', isCorrect: false, errorType: 'توصيل توالي بدلاً من التوازي', feedback: 'خطأ! قمت برفع قيمة المقاومة بجمعها (R1+R2+R3) وهذا قانون التوصيل على التوالي.' },
-                        { id: 'b', text: '2 أوم', isCorrect: true, errorType: null, feedback: 'أحسنت! في التوصيل على التوازي للمقاومات المتماثلة R_eq = R / n = 6 / 3 = 2 أوم.' },
-                        { id: 'c', text: '3 أوم', isCorrect: false, errorType: 'قسمة خاطئة على العدد', feedback: 'خطأ! تأكد من قسمة قيمة المقاومة الواحدة على عدد المقاومات الصحيح (3 مقاومات).' },
-                        { id: 'd', text: '1 أوم', isCorrect: false, errorType: 'خطأ حسابي', feedback: 'خطأ! مراجعة الناتج الحسابي لـ (6 ÷ 3).' }
-                    ],
-                    explanation: 'القانون الخاص بالمقاومات المتماثلة على التوازي: R_eq = R / n'
-                },
-                {
-                    id: 'q_03',
-                    type: 'mcq',
-                    difficulty: 'medium',
-                    skillId: 'sk_02',
-                    text: 'يعتمد قانون كيرشوف الأول (قانون النقطة) على المبدأ الفيزيائي الخاضع لـ:',
-                    options: [
-                        { id: 'a', text: 'بقاء الطاقة', isCorrect: false, errorType: 'خلط مع القانون الثاني', feedback: 'خطأ! قانون بقاء الطاقة يعتمد عليه قانون كيرشوف الثاني (قانون المسار المغلق).' },
-                        { id: 'b', text: 'بقاء الشحنة الكهربية', isCorrect: true, errorType: null, feedback: 'صحيح! مجموع الشحنات الداخلة لنقطة يساوي مجموع الشحنات الخارجة منها.' },
-                        { id: 'c', text: 'بقاء كمية الحركة', isCorrect: false, errorType: 'مفهوم ميكانيكي', feedback: 'خطأ! بقاء كمية الحركة خاص بالميكانيكا.' },
-                        { id: 'd', text: 'بقاء الكتلة', isCorrect: false, errorType: 'مفهوم عام', feedback: 'خطأ! لا ينطبق هذا المفهوم مباشرة هنا.' }
-                    ],
-                    explanation: 'قانون كيرشوف الأول يمثل حفظ للشحنة الكهربية ∑I_in = ∑I_out.'
-                },
-                {
-                    id: 'q_05',
-                    type: 'mcq',
-                    difficulty: 'hard',
-                    skillId: 'sk_03',
-                    text: 'في لغز الفيزياء: طائر يقف على سلك كهربائي للضغط العالي (100,000 فولت) دون أن يصعق. ما السبب؟',
-                    options: [
-                        { id: 'a', text: 'لأن أقدام الطائر عازلة تماماً للكهرباء', isCorrect: false, errorType: 'تصور خاطئ للمادة', feedback: 'خطأ! جسم الطائر موصل للكهرباء وليس عازلاً.' },
-                        { id: 'b', text: 'لعدم وجود فرق جهد بين قدمي الطائر على السلك نفسه', isCorrect: true, errorType: null, feedback: 'إجابة مذهلة! لا يمر تيار في جسم الطائر لأن الجهد الكهربي تحت قدميه متساوٍ تقريباً (فرق الجهد V ≈ 0).' },
-                        { id: 'c', text: 'لأن السلك مغلف بمادة معزولة قوية جداً', isCorrect: false, errorType: 'معلومة خاطئة عن أسلاك الضغط العالي', feedback: 'خطأ! أسلاك الضغط العالي غير مغلفة بعازل غالباً لتقليل الوزن والتكلفة.' },
-                        { id: 'd', text: 'لأن تيار الضغط العالي يسري فقط في مركز السلك', isCorrect: false, errorType: 'تأثير ظاهري خاطئ', feedback: 'خطأ! التيار يتوزع على السلك.' }
-                    ],
-                    explanation: 'الشرط الأساسي لسريان التيار هو وجود "فرق جهد" (ΔV). قدمي الطائر على نقطتين لهما نفس الجهد الكهربي.'
-                }
-            ],
-            remedials: [
-                {
-                    id: 'rem_01',
-                    studentId: 'std_01',
-                    skillId: 'sk_02',
-                    skillName: 'قانونا كيرشوف للدوائر المغلقة',
-                    title: 'خطة تقوية: فهم وتطبيق قانون كيرشوف الأول والثاني',
-                    status: 'in_progress',
-                    content: 'شرح مبسط: مجموع التيارات الداخلة لنقطة = مجموع التيارات الخارجة منها. ركز على تحديد اتجاه الأسهم وعلامات الجهد.',
-                    assignedDate: '2026-10-25',
-                    questions: ['q_03']
-                }
-            ]
+                return JSON.parse(stored);
+            },
+            saveUsers: function(users) {
+                localStorage.setItem('phys_users', JSON.stringify(users));
+            },
+            addUser: function(user) {
+                const users = this.getUsers();
+                users.push(user);
+                this.saveUsers(users);
+            },
+            deleteUser: function(userId) {
+                let users = this.getUsers();
+                users = users.filter(u => u.id !== userId);
+                this.saveUsers(users);
+            },
+            skills: SKILLS_LIST,
+            questions: SEED_QUESTIONS,
+            homeworks: SEED_HOMEWORKS
         };
 
         const state = {
@@ -248,10 +281,11 @@
 
         const auth = {
             login: function(code, password) {
-                const user = DB.users.find(u => u.code.toLowerCase() === code.toLowerCase() && u.pass === password);
+                const users = DB.getUsers();
+                const user = users.find(u => u.code.toLowerCase() === code.trim().toLowerCase() && u.pass === password.trim());
                 if (user) {
                     state.currentUser = user;
-                    localStorage.setItem('phys_user', JSON.stringify(user));
+                    localStorage.setItem('phys_active_user', JSON.stringify(user));
                     router.init();
                     return { success: true };
                 }
@@ -259,15 +293,20 @@
             },
             logout: function() {
                 state.currentUser = null;
-                localStorage.removeItem('phys_user');
+                localStorage.removeItem('phys_active_user');
                 router.renderLogin();
             },
             checkAutoLogin: function() {
-                const saved = localStorage.getItem('phys_user');
+                const saved = localStorage.getItem('phys_active_user');
                 if (saved) {
                     try {
-                        state.currentUser = JSON.parse(saved);
-                        return true;
+                        const parsed = JSON.parse(saved);
+                        const users = DB.getUsers();
+                        const exists = users.find(u => u.id === parsed.id);
+                        if (exists) {
+                            state.currentUser = exists;
+                            return true;
+                        }
                     } catch(e) {
                         return false;
                     }
@@ -304,21 +343,16 @@
                     links = [
                         { id: 'dashboard', label: 'الرئيسية والتحفيز', icon: 'fa-house-chimney' },
                         { id: 'quizzes', label: 'الامتحانات التكيفية', icon: 'fa-file-pen' },
-                        { id: 'assignments', label: 'الواجبات اليومية', icon: 'fa-book-open' },
-                        { id: 'challenges', label: 'تحديات وأفكار الفيزياء ⚡', icon: 'fa-bolt' },
+                        { id: 'assignments', label: 'الواجبات والتمارين', icon: 'fa-book-open' },
+                        { id: 'challenges', label: 'تحديات لغز الفيزياء ⚡', icon: 'fa-bolt' },
                         { id: 'mastery', label: 'متابعة المستوى والإتقان', icon: 'fa-chart-line' }
                     ];
                 } else if (state.currentUser.role === 'teacher') {
                     links = [
                         { id: 'dashboard', label: 'لوحة التحكم والمؤشرات', icon: 'fa-chart-pie' },
-                        { id: 'students', label: 'إدارة الطلاب', icon: 'fa-users' },
-                        { id: 'qbank', label: 'بنك الأسئلة والمفاهيم', icon: 'fa-database' },
+                        { id: 'students', label: 'إدارة وتكواد الطلاب', icon: 'fa-user-plus' },
+                        { id: 'qbank', label: 'بنك الأسئلة (30 سؤالاً)', icon: 'fa-database' },
                         { id: 'remedials', label: 'الخطط العلاجية', icon: 'fa-stethoscope' }
-                    ];
-                } else if (state.currentUser.role === 'parent') {
-                    links = [
-                        { id: 'dashboard', label: 'تقرير ولي الأمر', icon: 'fa-user-check' },
-                        { id: 'mastery', label: 'مستوى الابن والتوصيات', icon: 'fa-ribbon' }
                     ];
                 }
 
@@ -349,7 +383,8 @@
                 if (tabId === 'dashboard') {
                     if (state.currentUser.role === 'student') views.studentDashboard(container);
                     else if (state.currentUser.role === 'teacher') views.teacherDashboard(container);
-                    else if (state.currentUser.role === 'parent') views.parentDashboard(container);
+                } else if (tabId === 'students') {
+                    views.teacherStudentsManagement(container);
                 } else if (tabId === 'quizzes') {
                     views.studentQuizzes(container);
                 } else if (tabId === 'assignments') {
@@ -374,42 +409,44 @@
 
             renderLogin: function() {
                 document.getElementById('app-header').classList.add('hidden');
+                const users = DB.getUsers();
                 const container = document.getElementById('app-content');
                 container.innerHTML = `
-                    <div class="max-w-md mx-auto my-8 sm:my-16 bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-100 animate-pop">
+                    <div class="max-w-md mx-auto my-6 sm:my-12 bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-100 animate-pop">
                         <div class="bg-gradient-to-br from-navy-900 via-navy-800 to-teal-700 text-white p-8 text-center relative">
-                            <div class="w-20 h-20 mx-auto mb-3 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/20 shadow-inner glow-effect cursor-pointer" onclick="ui.fillLoginHelp()">
+                            <div class="w-20 h-20 mx-auto mb-3 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/20 shadow-inner glow-effect cursor-pointer">
                                 <i class="fa-solid fa-atom text-4xl text-teal-400 pulse-slow"></i>
                             </div>
                             <h2 class="text-2xl font-extrabold font-tajawal">منصة الفيزيائي الذكية</h2>
-                            <p class="text-slate-300 text-xs mt-1">نظام التقييم والتعلم التكيفي التشخيصي والعلاجي</p>
+                            <p class="text-slate-300 text-xs mt-1">نظام التقييم والتعلم التكيفي وتشخيص المفاهيم</p>
                         </div>
 
                         <div class="p-6 sm:p-8 space-y-5">
                             <form onsubmit="ui.handleLogin(event)" class="space-y-4">
                                 <div>
-                                    <label class="block text-xs font-bold text-slate-700 mb-1">رمز الحساب / المعرف:</label>
-                                    <input type="text" id="login-code" required placeholder="std1 أو tch123" 
+                                    <label class="block text-xs font-bold text-slate-700 mb-1">رمز الحساب / المعرف الخاص بك:</label>
+                                    <input type="text" id="login-code" required placeholder="مثال: tch123 أو كود الطالب" 
                                         class="w-full px-4 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-teal-500 text-sm font-semibold">
                                 </div>
                                 <div>
                                     <label class="block text-xs font-bold text-slate-700 mb-1">كلمة المرور:</label>
-                                    <input type="password" id="login-pass" required value="123456"
+                                    <input type="password" id="login-pass" required placeholder="******" value="123456"
                                         class="w-full px-4 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-teal-500 text-sm font-semibold">
                                 </div>
                                 <div id="login-error" class="hidden text-rose-600 text-xs font-bold bg-rose-50 p-2 rounded-lg"></div>
                                 <button type="submit" 
                                     class="w-full py-3.5 bg-gradient-to-r from-teal-600 to-teal-500 hover:from-teal-700 text-white font-bold rounded-xl shadow-lg shadow-teal-500/30 transition">
-                                    دخول المنصة <i class="fa-solid fa-arrow-left mr-2"></i>
+                                    تسجيل الدخول <i class="fa-solid fa-arrow-left mr-2"></i>
                                 </button>
                             </form>
 
-                            <div class="pt-4 border-t border-slate-100 text-center">
-                                <span class="text-xs text-slate-400 block mb-2">أو اختار حساباً تجريبياً سديماً:</span>
-                                <div class="grid grid-cols-3 gap-2 text-xs font-medium">
-                                    <button onclick="ui.quickLogin('tch123')" class="p-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-slate-700 font-bold">معلم physics</button>
-                                    <button onclick="ui.quickLogin('std1')" class="p-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-slate-700 font-bold">طالب (عمر)</button>
-                                    <button onclick="ui.quickLogin('prn1')" class="p-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-slate-700 font-bold">ولي أمر</button>
+                            <div class="pt-4 border-t border-slate-100">
+                                <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                                    <span class="text-xs font-bold text-slate-700 block mb-1">💡 تعليمات الدخول والتجربة:</span>
+                                    <p class="text-[11px] text-slate-500">
+                                        • حساب المعرف الافتراضي للمعلم: <b class="text-teal-700">tch123</b> / كلمة السر: <b>123456</b><br>
+                                        • يمكنك الدخول كمدرس وتكواد طلاب جديد بالأسماء وكلمات السر ثم الخروج والدخول كطالب للحل بالكامل من البداية.
+                                    </p>
                                 </div>
                             </div>
                         </div>
@@ -430,16 +467,18 @@
                     isCorrect: isCorrect,
                     feedback: selectedOption ? selectedOption.feedback : 'لم يتم تحديد إجابة.',
                     explanation: question.explanation,
-                    errorType: selectedOption ? selectedOption.errorType : null,
                     skillId: question.skillId
                 };
             },
 
             getNextQuestion: function(attemptHistory) {
                 const answeredIds = attemptHistory.map(h => h.questionId);
-                const available = DB.questions.filter(q => !answeredIds.includes(q.id));
+                // Filter only MCQ questions for adaptive quiz testing
+                const mcqQuestions = DB.questions.filter(q => q.type === 'mcq');
+                const available = mcqQuestions.filter(q => !answeredIds.includes(q.id));
                 if (available.length === 0) return null;
-                return available[0];
+                // Simple adaptive selection: pick randomly or sequentially from available
+                return available[Math.floor(Math.random() * available.length)];
             }
         };
 
@@ -451,18 +490,18 @@
                         <div class="relative overflow-hidden bg-gradient-to-r from-navy-900 via-navy-800 to-teal-800 rounded-3xl p-6 sm:p-8 text-white shadow-xl">
                             <div class="relative z-10 max-w-2xl space-y-3">
                                 <span class="inline-block px-3 py-1 bg-teal-500/20 border border-teal-400/30 text-teal-300 rounded-full text-xs font-bold">
-                                    ⚡ تحفيز اليوم الفيزيائي
+                                    ⚡ لوحة الطالب التفاعلية
                                 </span>
-                                <h1 class="text-2xl sm:text-3xl font-black font-tajawal">مرحباً بك يا بطل الفيزيائيين، ${user.name}! 🚀</h1>
+                                <h1 class="text-2xl sm:text-3xl font-black font-tajawal">أهلاً بك يا بطل الفيزياء: ${user.name}! 🚀</h1>
                                 <p class="text-slate-200 text-sm leading-relaxed">
-                                    "الفيزياء ليست مجرد معادلات لحفظها، بل هي العدسة التي نرى بها أسرار الكون!"
+                                    رحلتك في فهم مفاهيم الفيزياء تبدأ من هنا. اختر الواجبات أو ابدأ الامتحان التكيفي لتشخيص مستواك.
                                 </p>
                                 <div class="pt-2 flex flex-wrap gap-3">
                                     <button onclick="router.navigate('assignments')" class="px-5 py-2.5 bg-teal-500 hover:bg-teal-600 font-bold rounded-xl text-xs sm:text-sm shadow-lg shadow-teal-500/30 transition">
-                                        حل الواجبات اليومية <i class="fa-solid fa-book-open mr-1"></i>
+                                        استعراض الواجبات المتاحة <i class="fa-solid fa-book-open mr-1"></i>
                                     </button>
                                     <button onclick="router.navigate('quizzes')" class="px-5 py-2.5 bg-white/10 hover:bg-white/20 font-bold rounded-xl text-xs sm:text-sm border border-white/20 transition">
-                                        بدء الامتحانات التكيفية
+                                        بدء امتحان تكيفي جديد
                                     </button>
                                 </div>
                             </div>
@@ -471,11 +510,11 @@
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex items-center space-x-4 space-x-reverse">
                                 <div class="w-12 h-12 rounded-xl bg-teal-100 text-teal-600 flex items-center justify-center text-xl font-bold">
-                                    <i class="fa-solid fa-trophy"></i>
+                                    <i class="fa-solid fa-flag-checkered"></i>
                                 </div>
                                 <div>
-                                    <span class="text-xs text-slate-400 font-bold block">مستوى الإتقان العام</span>
-                                    <span class="text-xl font-extrabold text-slate-800">82% <span class="text-xs text-emerald-500 font-bold">ممتـاز</span></span>
+                                    <span class="text-xs text-slate-400 font-bold block">حالة الحساب</span>
+                                    <span class="text-base font-extrabold text-slate-800">طالب حديث <span class="text-xs text-teal-600 font-bold">(جديد)</span></span>
                                 </div>
                             </div>
                             <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex items-center space-x-4 space-x-reverse">
@@ -483,17 +522,17 @@
                                     <i class="fa-solid fa-book-open"></i>
                                 </div>
                                 <div>
-                                    <span class="text-xs text-slate-400 font-bold block">واجبات يومية متاحة</span>
-                                    <span class="text-xl font-extrabold text-slate-800">2 واجب جديد</span>
+                                    <span class="text-xs text-slate-400 font-bold block">الواجبات اليومية المتاحة</span>
+                                    <span class="text-xl font-extrabold text-slate-800">${DB.homeworks.length} واجبات</span>
                                 </div>
                             </div>
                             <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex items-center space-x-4 space-x-reverse">
                                 <div class="w-12 h-12 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center text-xl font-bold">
-                                    <i class="fa-solid fa-bolt"></i>
+                                    <i class="fa-solid fa-database"></i>
                                 </div>
                                 <div>
-                                    <span class="text-xs text-slate-400 font-bold block">نقاط التحدي والمواظبة</span>
-                                    <span class="text-xl font-extrabold text-slate-800">450 نقطة</span>
+                                    <span class="text-xs text-slate-400 font-bold block">بنك أسئلة الفيزياء</span>
+                                    <span class="text-xl font-extrabold text-slate-800">30 سؤالاً</span>
                                 </div>
                             </div>
                         </div>
@@ -501,15 +540,160 @@
                 `;
             },
 
-            // NEW & ENHANCED HOMEWORK / ASSIGNMENT VIEW (WITH ESSAY & MCQ INTERACTIVE SOLVING)
+            teacherDashboard: function(container) {
+                const users = DB.getUsers();
+                const students = users.filter(u => u.role === 'student');
+
+                container.innerHTML = `
+                    <div class="space-y-6">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <h1 class="text-2xl font-bold text-slate-800">لوحة تحكم معلم الفيزياء</h1>
+                                <p class="text-xs text-slate-500">متابعة إحصائيات النظام وإدارة تكواد الطلاب وبنك الأسئلة.</p>
+                            </div>
+                            <button onclick="router.navigate('students')" class="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs rounded-xl shadow">
+                                <i class="fa-solid fa-user-plus ml-1"></i> إضافة وإدارة الطلاب
+                            </button>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                                <span class="text-xs text-slate-400 font-bold block">إجمالي الطلاب المسجلين</span>
+                                <span class="text-2xl font-extrabold text-slate-800 mt-1 block">${students.length} طالب</span>
+                            </div>
+                            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                                <span class="text-xs text-slate-400 font-bold block">إجمالي الأسئلة في البنك</span>
+                                <span class="text-2xl font-extrabold text-teal-600 mt-1 block">30 سؤالاً</span>
+                            </div>
+                            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                                <span class="text-xs text-slate-400 font-bold block">الأسئلة المقالية (علل/اشرح)</span>
+                                <span class="text-2xl font-extrabold text-indigo-600 mt-1 block">10 أسئلة</span>
+                            </div>
+                            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                                <span class="text-xs text-slate-400 font-bold block">الواجبات المجهزة</span>
+                                <span class="text-2xl font-extrabold text-amber-600 mt-1 block">${DB.homeworks.length} واجبات</span>
+                            </div>
+                        </div>
+
+                        <div class="bg-white p-6 rounded-2xl border border-slate-200 space-y-4">
+                            <h3 class="font-bold text-slate-800 text-base">قائمة الطلاب المسجلين بالنظام حالياً</h3>
+                            ${students.length === 0 ? `
+                                <div class="p-6 text-center text-slate-400 text-xs bg-slate-50 rounded-xl">
+                                    لا يوجد طلاب مسجلون بعد. قم بالضغط على "إضافة وإدارة الطلاب" لتكويد أول طالب.
+                                </div>
+                            ` : `
+                                <div class="overflow-x-auto">
+                                    <table class="w-full text-right text-xs">
+                                        <thead class="bg-slate-50 text-slate-600">
+                                            <tr>
+                                                <th class="p-3">اسم الطالب</th>
+                                                <th class="p-3">كود الدخول</th>
+                                                <th class="p-3">كلمة المرور</th>
+                                                <th class="p-3">الصف الدراسي</th>
+                                                <th class="p-3">إجراء</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-slate-100">
+                                            ${students.map(s => `
+                                                <tr>
+                                                    <td class="p-3 font-bold text-slate-800">${s.name}</td>
+                                                    <td class="p-3 font-mono font-bold text-teal-600">${s.code}</td>
+                                                    <td class="p-3 font-mono">${s.pass}</td>
+                                                    <td class="p-3">${s.grade || 'الثالث الثانوي'}</td>
+                                                    <td class="p-3">
+                                                        <button onclick="ui.deleteStudent('${s.id}')" class="text-rose-500 hover:text-rose-700 font-bold"><i class="fa-solid fa-trash"></i> حذف</button>
+                                                    </td>
+                                                </tr>
+                                            `).join('')}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            `}
+                        </div>
+                    </div>
+                `;
+            },
+
+            // Teacher Students Creation & Management View
+            teacherStudentsManagement: function(container) {
+                const users = DB.getUsers();
+                const students = users.filter(u => u.role === 'student');
+
+                container.innerHTML = `
+                    <div class="space-y-6">
+                        <div class="bg-gradient-to-r from-navy-900 to-teal-800 text-white p-6 rounded-3xl shadow-xl flex justify-between items-center">
+                            <div>
+                                <h2 class="text-xl font-black font-tajawal">إضافة وتكويد الطلاب الجدد 👨‍🎓</h2>
+                                <p class="text-xs text-slate-300 mt-1">قم بإنشاء كود الطالب وكلمة المرور الخاصة به لتمكينه من الدخول والحل.</p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div class="bg-white p-6 rounded-2xl border border-slate-200 space-y-4 md:col-span-1 shadow-sm">
+                                <h3 class="font-bold text-slate-800 text-sm border-b pb-2">تسجيل طالب جديد</h3>
+                                <form onsubmit="ui.handleAddStudent(event)" class="space-y-3">
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-700 mb-1">اسم الطالب رباعي:</label>
+                                        <input type="text" id="std-name" required placeholder="أحمد محمد علي" 
+                                            class="w-full p-2.5 rounded-xl border border-slate-300 text-xs font-semibold focus:ring-2 focus:ring-teal-500">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-700 mb-1">كود الدخول (اسم المستخدم):</label>
+                                        <input type="text" id="std-code" required placeholder="مثال: std101" 
+                                            class="w-full p-2.5 rounded-xl border border-slate-300 text-xs font-semibold focus:ring-2 focus:ring-teal-500">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-700 mb-1">كلمة المرور:</label>
+                                        <input type="text" id="std-pass" required placeholder="123456" value="123456" 
+                                            class="w-full p-2.5 rounded-xl border border-slate-300 text-xs font-semibold focus:ring-2 focus:ring-teal-500">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-700 mb-1">الصف الدراسي:</label>
+                                        <select id="std-grade" class="w-full p-2.5 rounded-xl border border-slate-300 text-xs font-semibold">
+                                            <option value="الصف الثالث الثانوي">الصف الثالث الثانوي</option>
+                                            <option value="الصف الثاني الثانوي">الصف الثاني الثانوي</option>
+                                            <option value="الصف الأول الثانوي">الصف الأول الثانوي</option>
+                                        </select>
+                                    </div>
+                                    <button type="submit" class="w-full py-3 bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs rounded-xl shadow transition">
+                                        <i class="fa-solid fa-plus ml-1"></i> حفظ وتكويد الطالب
+                                    </button>
+                                </form>
+                            </div>
+
+                            <div class="bg-white p-6 rounded-2xl border border-slate-200 space-y-4 md:col-span-2 shadow-sm">
+                                <h3 class="font-bold text-slate-800 text-sm border-b pb-2">قائمة تكواد الحسابات</h3>
+                                ${students.length === 0 ? `
+                                    <div class="text-center py-8 text-slate-400 text-xs">لا يوجد طلاب حتى الآن. سجل الطالب الأول من النموذج المجاور.</div>
+                                ` : `
+                                    <div class="space-y-3 max-h-[450px] overflow-y-auto pr-1">
+                                        ${students.map(s => `
+                                            <div class="p-3.5 bg-slate-50 border border-slate-200 rounded-xl flex justify-between items-center text-xs">
+                                                <div>
+                                                    <span class="font-bold text-slate-800 text-sm block">${s.name}</span>
+                                                    <span class="text-slate-500">كود الدخول: <b class="text-teal-700 font-mono">${s.code}</b> | كلمة السر: <b class="font-mono text-slate-700">${s.pass}</b></span>
+                                                </div>
+                                                <button onclick="ui.deleteStudent('${s.id}')" class="px-3 py-1 bg-rose-50 text-rose-600 hover:bg-rose-100 font-bold rounded-lg transition">
+                                                    حذف
+                                                </button>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                `}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            },
+
             studentAssignments: function(container) {
                 container.innerHTML = `
                     <div class="space-y-6">
                         <div class="bg-gradient-to-r from-navy-900 via-navy-800 to-teal-800 p-6 sm:p-8 rounded-3xl text-white shadow-xl flex justify-between items-center">
                             <div>
-                                <span class="px-3 py-1 bg-teal-500/30 text-teal-300 font-bold text-xs rounded-full inline-block mb-2">📚 الواجبات والتمارين اليومية</span>
-                                <h2 class="text-2xl font-black font-tajawal">حل واجباتك واستلم التغذية العلاجية فوراً!</h2>
-                                <p class="text-xs text-slate-300 mt-1">يتكون كل واجب من أسئلة (اختيار من متعدد ومقالي) مع نظام تقييم ذكي وتفسيري.</p>
+                                <span class="px-3 py-1 bg-teal-500/30 text-teal-300 font-bold text-xs rounded-full inline-block mb-2">📚 الواجبات والتمارين المقالية والذكية</span>
+                                <h2 class="text-2xl font-black font-tajawal">حل واجباتك واستلم التغذية العلاجية والتفسير!</h2>
+                                <p class="text-xs text-slate-300 mt-1">يحتوي كل واجب على أسئلة اختيار من متعدد وأسئلة مقالية (علل واشرح واستنتج).</p>
                             </div>
                             <i class="fa-solid fa-pen-ruler text-5xl text-teal-400 opacity-40 hidden sm:block"></i>
                         </div>
@@ -524,21 +708,21 @@
                                             </div>
                                             <div>
                                                 <h3 class="font-extrabold text-slate-800 text-base">${hw.title}</h3>
-                                                <span class="text-xs text-slate-400">آخر موعد للتسليم: <b class="text-amber-600">${hw.dueDate}</b></span>
+                                                <span class="text-xs text-slate-400">آخر موعد: <b class="text-amber-600">${hw.dueDate}</b></span>
                                             </div>
                                         </div>
                                         <span class="px-3 py-1 bg-slate-100 text-slate-700 rounded-full font-bold text-xs self-start sm:self-auto">
-                                            عدد الأسئلة: ${hw.questions.length} أسئلة
+                                            ${hw.questions.length} أسئلة شاملة
                                         </span>
                                     </div>
 
                                     <div class="flex justify-between items-center pt-2">
                                         <div class="flex gap-2">
-                                            <span class="text-xs font-bold text-teal-700 bg-teal-50 px-2.5 py-1 rounded-lg">اختيار من متعدد</span>
+                                            <span class="text-xs font-bold text-teal-700 bg-teal-50 px-2.5 py-1 rounded-lg">اختيارات متعددة</span>
                                             <span class="text-xs font-bold text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded-lg">أسئلة مقالية علل</span>
                                         </div>
                                         <button onclick="ui.startHomework('${hw.id}')" class="px-5 py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs rounded-xl shadow transition flex items-center gap-2">
-                                            <span>بدء حل الواجب</span>
+                                            <span>بدء الواجب الآن</span>
                                             <i class="fa-solid fa-chevron-left"></i>
                                         </button>
                                     </div>
@@ -549,45 +733,19 @@
                 `;
             },
 
-            teacherDashboard: function(container) {
-                container.innerHTML = `
-                    <div class="space-y-6">
-                        <div class="flex justify-between items-center">
-                            <div>
-                                <h1 class="text-2xl font-bold text-slate-800">لوحة تحكم المعلم الشاملة</h1>
-                                <p class="text-xs text-slate-500">متابعة الأداء والتأكد من تشخيص الطلاب وتحديد المفاهيم المغلوطة.</p>
-                            </div>
-                        </div>
-                        <div class="bg-white p-6 rounded-2xl border border-slate-200">
-                            <h3 class="font-bold text-slate-800 text-sm mb-2">إمارة الواجبات والتصحيح المقالي الذكي</h3>
-                            <p class="text-xs text-slate-500">تم إضافة إجابات الطلاب المقالية في قسم الواجبات لربط الكلمات المفتاحية تلقائياً وعرض التحليل العلاجي.</p>
-                        </div>
-                    </div>
-                `;
-            },
-
-            parentDashboard: function(container) {
-                container.innerHTML = `
-                    <div class="space-y-6">
-                        <div class="bg-white p-6 rounded-2xl border border-slate-200">
-                            <h2 class="text-xl font-bold text-slate-800 mb-2">متابعة ولي الأمر للطالب: عمر خالد</h2>
-                            <p class="text-xs text-slate-500">تقرير مباشر معتمد من المعلم حول الواجبات والامتحانات التكيفية.</p>
-                        </div>
-                    </div>
-                `;
-            },
-
             studentQuizzes: function(container) {
                 let sessionState = { history: [], score: 0 };
                 const renderQuestion = () => {
                     const nextQ = AdaptiveEngine.getNextQuestion(sessionState.history);
-                    if (!nextQ || sessionState.history.length >= 3) {
+                    if (!nextQ || sessionState.history.length >= 5) {
+                        const correctCount = sessionState.history.filter(h => h.isCorrect).length;
                         container.innerHTML = `
                             <div class="max-w-xl mx-auto bg-white p-8 rounded-3xl shadow-xl border text-center space-y-5">
-                                <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-3xl mx-auto">
-                                    <i class="fa-solid fa-check"></i>
+                                <div class="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-4xl mx-auto">
+                                    <i class="fa-solid fa-trophy"></i>
                                 </div>
-                                <h2 class="text-2xl font-black text-slate-800">اكتمل الاختبار التكيفي!</h2>
+                                <h2 class="text-2xl font-black text-slate-800">انتهى الاختبار التكيفي!</h2>
+                                <p class="text-sm text-slate-600">أجبت على 5 أسئلة تكيفية تشخيصية.<br>النتيجة: <b class="text-teal-600 text-lg">${correctCount} من 5</b></p>
                                 <button onclick="router.navigate('dashboard')" class="w-full py-3 bg-teal-600 text-white font-bold text-xs rounded-xl">العودة للرئيسية</button>
                             </div>
                         `;
@@ -597,9 +755,10 @@
                     container.innerHTML = `
                         <div class="max-w-2xl mx-auto bg-white p-6 sm:p-8 rounded-3xl shadow-lg border space-y-6">
                             <div class="flex justify-between items-center border-b pb-4">
-                                <span class="text-xs font-bold text-teal-600 bg-teal-50 px-3 py-1 rounded-full">اختبار تكيفي</span>
+                                <span class="text-xs font-bold text-teal-600 bg-teal-50 px-3 py-1 rounded-full">امتحان تشخيصي تكيفي</span>
+                                <span class="text-xs font-bold text-slate-400">السؤال ${sessionState.history.length + 1} من 5</span>
                             </div>
-                            <div class="text-base font-bold text-slate-800">${nextQ.text}</div>
+                            <div class="text-base font-bold text-slate-800 leading-relaxed">${nextQ.text}</div>
                             <div class="space-y-3">
                                 ${nextQ.options.map(opt => `
                                     <button onclick="ui.submitAnswer('${nextQ.id}', '${opt.id}')" 
@@ -618,14 +777,15 @@
             },
 
             physicsChallenges: function(container) {
-                const challengeQ = DB.questions.find(q => q.id === 'q_05');
+                const challengeQ = DB.questions.find(q => q.id === 'q_16');
                 container.innerHTML = `
                     <div class="space-y-6">
                         <div class="bg-gradient-to-r from-purple-900 to-indigo-800 text-white p-6 sm:p-8 rounded-3xl shadow-xl">
-                            <h2 class="text-2xl font-black">تحديات الفيزياء المفاجئة! ⚡</h2>
+                            <h2 class="text-2xl font-black">تحديات وألغاز الفيزياء! ⚡</h2>
+                            <p class="text-xs text-purple-200 mt-1">تفكير نقدي وتطبيقات حياتية مغايرة.</p>
                         </div>
                         <div class="bg-white p-6 rounded-3xl border shadow-sm space-y-4">
-                            <h3 class="font-bold text-slate-800">${challengeQ.text}</h3>
+                            <h3 class="font-bold text-slate-800 text-base leading-relaxed">${challengeQ.text}</h3>
                             <div class="space-y-3">
                                 ${challengeQ.options.map(opt => `
                                     <button onclick="ui.showChallengeFeedback('${opt.id}')" 
@@ -643,17 +803,18 @@
                 container.innerHTML = `
                     <div class="space-y-6">
                         <div class="bg-white p-6 rounded-3xl border shadow-sm">
-                            <h2 class="text-xl font-bold text-slate-800 mb-1">متابعة مستوى الإتقان التفصيلي</h2>
+                            <h2 class="text-xl font-bold text-slate-800 mb-1">متابعة إتقان المفاهيم الفيزيائية</h2>
+                            <p class="text-xs text-slate-500">مشر مؤشرات الإتقان بناءً على الأسئلة المجابة بالواجبات والامتحانات.</p>
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             ${DB.skills.map(s => `
                                 <div class="bg-white p-5 rounded-2xl border shadow-sm space-y-3">
                                     <div class="flex justify-between items-center">
                                         <span class="font-bold text-slate-800 text-sm">${s.name}</span>
-                                        <span class="text-xs font-bold text-teal-600 bg-teal-50 px-2.5 py-1 rounded-full">متقن 85%</span>
+                                        <span class="text-xs font-bold text-teal-600 bg-teal-50 px-2.5 py-1 rounded-full">مستوى الإتقان: 75%</span>
                                     </div>
                                     <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
-                                        <div class="bg-teal-500 h-full rounded-full" style="width: 85%"></div>
+                                        <div class="bg-teal-500 h-full rounded-full" style="width: 75%"></div>
                                     </div>
                                 </div>
                             `).join('')}
@@ -663,14 +824,36 @@
             },
 
             questionBank: function(container) {
+                const mcqs = DB.questions.filter(q => q.type === 'mcq');
+                const essays = DB.questions.filter(q => q.type === 'essay');
+
                 container.innerHTML = `
                     <div class="space-y-6">
-                        <h2 class="text-xl font-bold text-slate-800">بنك الأسئلة والمفاهيم</h2>
-                        <div class="space-y-3">
-                            ${DB.questions.map(q => `
-                                <div class="bg-white p-4 rounded-2xl border space-y-2">
-                                    <p class="font-bold text-sm text-slate-800">${q.text}</p>
-                                    <p class="text-xs text-slate-500 border-t pt-2"><b>الشرح:</b> ${q.explanation}</p>
+                        <div class="flex justify-between items-center bg-white p-6 rounded-3xl border shadow-sm">
+                            <div>
+                                <h2 class="text-xl font-bold text-slate-800">بنك الأسئلة الشامل (30 سؤالاً)</h2>
+                                <p class="text-xs text-slate-500">20 سؤال اختيار من متعدد + 10 أسئلة مقالية تعليل واستنتاج.</p>
+                            </div>
+                            <div class="flex gap-2">
+                                <span class="px-3 py-1 bg-teal-100 text-teal-800 text-xs font-bold rounded-lg">${mcqs.length} اختيار</span>
+                                <span class="px-3 py-1 bg-indigo-100 text-indigo-800 text-xs font-bold rounded-lg">${essays.length} مقالي</span>
+                            </div>
+                        </div>
+
+                        <div class="space-y-4 max-h-[600px] overflow-y-auto pr-1">
+                            ${DB.questions.map((q, idx) => `
+                                <div class="bg-white p-5 rounded-2xl border border-slate-200 space-y-2">
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-xs font-extrabold px-2.5 py-0.5 rounded ${q.type==='mcq'?'bg-teal-50 text-teal-700':'bg-indigo-50 text-indigo-700'}">
+                                            س ${idx + 1} [${q.type === 'mcq' ? 'اختر' : 'مقالي'}] - مستوى ${q.difficulty === 'easy' ? 'سهل' : q.difficulty === 'medium' ? 'متوسط' : 'صعب'}
+                                        </span>
+                                    </div>
+                                    <p class="font-bold text-sm text-slate-800 leading-relaxed">${q.text}</p>
+                                    ${q.type === 'essay' ? `
+                                        <p class="text-xs text-slate-600 bg-slate-50 p-2.5 rounded-xl border"><b>الإجابة النموذجية:</b> ${q.modelAnswer}</p>
+                                    ` : `
+                                        <p class="text-xs text-teal-700 bg-teal-50/50 p-2 rounded-xl"><b>التفسير:</b> ${q.explanation}</p>
+                                    `}
                                 </div>
                             `).join('')}
                         </div>
@@ -682,7 +865,8 @@
                 container.innerHTML = `
                     <div class="space-y-6">
                         <div class="bg-white p-6 rounded-3xl border shadow-sm">
-                            <h2 class="text-xl font-bold text-slate-800">إدارة الخطط العلاجية والتغذية الراجعة</h2>
+                            <h2 class="text-xl font-bold text-slate-800">الخطط العلاجية والتغذية التفسيرية</h2>
+                            <p class="text-xs text-slate-500">متابعة أداء الطلاب واستخراج الثغرات الفيزيائية التلقائية.</p>
                         </div>
                     </div>
                 `;
@@ -690,7 +874,7 @@
         };
 
         /**
-         * UI Actions & Modal Handlers
+         * Action Handlers
          */
         const ui = {
             handleLogin: function(e) {
@@ -706,20 +890,48 @@
                 }
             },
 
-            quickLogin: function(code) {
-                document.getElementById('login-code').value = code;
-                document.getElementById('login-pass').value = '123456';
-                auth.login(code, '123456');
+            handleAddStudent: function(e) {
+                e.preventDefault();
+                const name = document.getElementById('std-name').value;
+                const code = document.getElementById('std-code').value;
+                const pass = document.getElementById('std-pass').value;
+                const grade = document.getElementById('std-grade').value;
+
+                // Check duplicate
+                const users = DB.getUsers();
+                if (users.some(u => u.code.toLowerCase() === code.trim().toLowerCase())) {
+                    alert('رمز الطالب هذا مستخدم بالفعل! يرجى اختيار كود آخر.');
+                    return;
+                }
+
+                const newStudent = {
+                    id: 'std_' + Date.now(),
+                    code: code.trim(),
+                    name: name.trim(),
+                    role: 'student',
+                    pass: pass.trim(),
+                    grade: grade
+                };
+
+                DB.addUser(newStudent);
+                router.navigate('students');
+                alert(`تم تكويد الطالب ${name} بنجاح!\nالكود: ${code}\nكلمة السر: ${pass}`);
             },
 
-            fillLoginHelp: function() {
-                alert('الحسابات التجريبية:\n- المعلم: tch123\n- الطالب: std1\n- ولي الأمر: prn1\nكلمة السر: 123456');
+            deleteStudent: function(studentId) {
+                if (confirm('هل أنت تأكد من حذف هذا الطالب من المنصة؟')) {
+                    DB.deleteUser(studentId);
+                    router.navigate('students');
+                }
             },
 
             // Interactive Homework Executor
             startHomework: function(hwId) {
                 const hw = DB.homeworks.find(h => h.id === hwId);
                 if (!hw) return;
+
+                // Resolve Question Objects from IDs
+                const hwQuestions = hw.questions.map(qId => DB.questions.find(q => q.id === qId)).filter(Boolean);
 
                 let userAnswers = {};
 
@@ -737,12 +949,12 @@
                             <div class="space-y-6 max-h-[60vh] overflow-y-auto px-1">
                     `;
 
-                    hw.questions.forEach((q, qIndex) => {
+                    hwQuestions.forEach((q, qIndex) => {
                         htmlContent += `
                             <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3">
                                 <div class="flex justify-between items-center">
-                                    <span class="text-xs font-bold px-2.5 py-1 rounded bg-teal-100 text-teal-800">
-                                        سؤال ${qIndex + 1}: ${q.type === 'mcq' ? 'اختر الإجابة الصحيحة' : 'سؤال مقالي / علل'}
+                                    <span class="text-xs font-bold px-2.5 py-1 rounded ${q.type === 'mcq' ? 'bg-teal-100 text-teal-800' : 'bg-indigo-100 text-indigo-800'}">
+                                        سؤال ${qIndex + 1}: ${q.type === 'mcq' ? 'اختبار اختيار من متعدد' : 'سؤال مقالي تعليلي'}
                                     </span>
                                 </div>
                                 <p class="font-bold text-sm text-slate-800 leading-relaxed">${q.text}</p>
@@ -765,7 +977,7 @@
                                     <textarea id="essay_${q.id}" rows="3" placeholder="اكتب إجابتك واستنتاجك الفيزيائي هنا..."
                                         oninput="window.tempHwAnswers['${q.id}'] = this.value"
                                         class="w-full p-3 rounded-xl border border-slate-300 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white"></textarea>
-                                    <span class="text-[11px] text-slate-400 block mt-1">سيتم إجراء تحليل تلقائي للكلمات المفتاحية الفيزيائية ومطابقتها بالإجابة النموذجية.</span>
+                                    <span class="text-[11px] text-slate-400 block mt-1">تحليل تلقائي لمطابقة الكلمات المفتاحية التخصصية بالنموذج المعتمد.</span>
                                 </div>
                             `;
                         }
@@ -777,7 +989,7 @@
                             </div>
                             <button onclick="ui.submitHomeworkAnswers('${hw.id}')" 
                                 class="w-full py-3.5 bg-gradient-to-r from-teal-600 to-teal-500 hover:from-teal-700 text-white font-bold text-sm rounded-xl shadow-lg transition">
-                                إرسال الواجب واستعراض التغذية العلاجية الشاملة <i class="fa-solid fa-paper-plane mr-2"></i>
+                                إرسال وتصحيح الواجب وعرض التغذية العلاجية <i class="fa-solid fa-paper-plane mr-2"></i>
                             </button>
                         </div>
                     `;
@@ -789,23 +1001,24 @@
                 renderHWModal();
             },
 
-            // Evaluates Homework Answers and returns Rich Interpretive Remedial Feedback
             submitHomeworkAnswers: function(hwId) {
                 const hw = DB.homeworks.find(h => h.id === hwId);
                 const userAns = window.tempHwAnswers || {};
+
+                const hwQuestions = hw.questions.map(qId => DB.questions.find(q => q.id === qId)).filter(Boolean);
 
                 let resultHtml = `
                     <div class="space-y-6 text-right animate-pop">
                         <div class="bg-gradient-to-r from-teal-700 to-emerald-600 text-white p-5 rounded-2xl text-center space-y-1">
                             <i class="fa-solid fa-award text-3xl text-amber-300 mb-1"></i>
-                            <h3 class="text-xl font-black font-tajawal">تقرير التغذية الراجعة والتفسير الفيزيائي</h3>
-                            <p class="text-xs text-teal-100">تم تقييم إجاباتك بنجاح! راجع التفاصيل أدناه لتعزيز إتقانك.</p>
+                            <h3 class="text-xl font-black font-tajawal">تقرير التقييم والتغذية التفسيرية</h3>
+                            <p class="text-xs text-teal-100">تم تصحيح إجاباتك بنجاح! مراجعة التفاصيل أدناه تضمن إتقانك للمفاهيم.</p>
                         </div>
 
                         <div class="space-y-5 max-h-[60vh] overflow-y-auto px-1">
                 `;
 
-                hw.questions.forEach((q, index) => {
+                hwQuestions.forEach((q, index) => {
                     const ansValue = userAns[q.id];
 
                     if (q.type === 'mcq') {
@@ -820,15 +1033,14 @@
                                 </div>
 
                                 <div class="text-xs space-y-1.5 bg-white p-3 rounded-xl border border-slate-100">
-                                    <p class="font-bold text-slate-700">إجابتك: <span class="${isCorrect ? 'text-emerald-600 font-extrabold' : 'text-rose-600 font-extrabold'}">${selectedOpt ? selectedOpt.text : 'لم تجب'}</span></p>
-                                    <p class="text-slate-600 border-t pt-2"><b>التغذية الراجعة:</b> ${selectedOpt ? selectedOpt.feedback : 'لا تترك أسئلة دون إجابة.'}</p>
-                                    <p class="text-teal-700 font-semibold border-t pt-2"><b>الشرح والتفسير الفيزيائي:</b> ${q.explanation}</p>
+                                    <p class="font-bold text-slate-700">إجابتك: <span class="${isCorrect ? 'text-emerald-600 font-extrabold' : 'text-rose-600 font-extrabold'}">${selectedOpt ? selectedOpt.text : 'لم تُجب'}</span></p>
+                                    <p class="text-slate-600 border-t pt-2"><b>التغذية الراجعة:</b> ${selectedOpt ? selectedOpt.feedback : 'لم يتم تحديد خيار.'}</p>
+                                    <p class="text-teal-700 font-semibold border-t pt-2"><b>التفسير الفيزيائي:</b> ${q.explanation}</p>
                                 </div>
                             </div>
                         `;
                     } else if (q.type === 'essay') {
                         const studentText = ansValue || '';
-                        // Simple Keyword matching analysis for Essay evaluation
                         let matchedCount = 0;
                         q.keywords.forEach(kw => {
                             if (studentText.includes(kw)) matchedCount++;
@@ -837,25 +1049,25 @@
                         const matchScore = Math.round((matchedCount / q.keywords.length) * 100);
 
                         resultHtml += `
-                            <div class="p-4 rounded-2xl border ${matchScore >= 50 ? 'bg-indigo-50/60 border-indigo-200' : 'bg-amber-50/60 border-amber-200'} space-y-3">
+                            <div class="p-4 rounded-2xl border ${matchScore >= 40 ? 'bg-indigo-50/60 border-indigo-200' : 'bg-amber-50/60 border-amber-200'} space-y-3">
                                 <div class="flex justify-between items-center">
                                     <div class="flex items-center gap-2">
                                         <i class="fa-solid fa-file-pen text-indigo-600 text-lg"></i>
                                         <span class="font-bold text-xs text-slate-800">السؤال ${index + 1} (مقالي): ${q.text}</span>
                                     </div>
-                                    <span class="text-xs px-2.5 py-1 font-extrabold rounded-full ${matchScore >= 50 ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}">
-                                        مطابقة المفاهيم: ${matchScore}%
+                                    <span class="text-xs px-2.5 py-1 font-extrabold rounded-full ${matchScore >= 40 ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}">
+                                        درجة التغطية المفاهيمية: ${matchScore}%
                                     </span>
                                 </div>
 
                                 <div class="text-xs space-y-2 bg-white p-3 rounded-xl border border-slate-100">
-                                    <p class="text-slate-700"><b>إجابتك المسجلة:</b> "${studentText || 'لم تكتُب إجابة'}"</p>
+                                    <p class="text-slate-700"><b>إجابتك:</b> "${studentText || 'لم تكتُب نصاً'}"</p>
                                     <div class="border-t pt-2">
                                         <p class="font-bold text-indigo-900 mb-1">الإجابة النموذجية المعتمدة:</p>
                                         <p class="text-slate-700 bg-indigo-50/50 p-2.5 rounded-lg border border-indigo-100">${q.modelAnswer}</p>
                                     </div>
                                     <div class="border-t pt-2 text-amber-900 bg-amber-50/60 p-2.5 rounded-lg border border-amber-200">
-                                        <p class="font-bold mb-0.5"><i class="fa-solid fa-stethoscope"></i> التغذية العلاجية للمفهوم المقالي:</p>
+                                        <p class="font-bold mb-0.5"><i class="fa-solid fa-stethoscope"></i> التغذية العلاجية للمفهوم:</p>
                                         <p class="text-[11px] leading-relaxed">${q.remedialFeedback}</p>
                                     </div>
                                 </div>
@@ -867,7 +1079,7 @@
                 resultHtml += `
                         </div>
                         <button onclick="ui.closeModal()" class="w-full py-3 bg-navy-800 hover:bg-navy-900 text-white font-bold text-xs rounded-xl transition">
-                            إغلاق ومتابعة التعلم
+                            إغلاق ومتابعة
                         </button>
                     </div>
                 `;
@@ -903,7 +1115,7 @@
             },
 
             showChallengeFeedback: function(optId) {
-                const challengeQ = DB.questions.find(q => q.id === 'q_05');
+                const challengeQ = DB.questions.find(q => q.id === 'q_16');
                 const selectedOpt = challengeQ.options.find(o => o.id === optId);
                 
                 this.showModal(`
